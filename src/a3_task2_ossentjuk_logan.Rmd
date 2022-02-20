@@ -11,10 +11,12 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(tidyverse)
 library(janitor)
 library(here)
+library(NbClust)
+library(ggdendro)
 ```
 
 **Use hierarchical clustering by complete linkage to create a dendrogram showing multivariate clustering for water chemistry by site.**
-To perform hierarchical clustering by site, you’ll want to make a data frame that has a single summary row per site (e.g. based on means from all observations at that site), then calculate the Euclidean distance before performing complete linkage agglomerative hierarchical clustering. 
+To perform hierarchical clustering by site, you’ll want to make a data frame that has a single summary row per site (e.g. based on means from all observations at that site), then *calculate the Euclidean distance before performing complete linkage agglomerative hierarchical clustering*. 
 
 Link to the data: https://drive.google.com/file/d/16rYLBi-CgvjcWhOsX1SLdD9HHUMP9m2l/view?usp=sharing
 
@@ -23,12 +25,56 @@ SBC LTER: Stream chemistry in the Santa Barbara Coastal drainage area, ongoing s
 Creators: Santa Barbara Coastal LTER, & Melack, John M
 Citation: Santa Barbara Coastal LTER and J. Melack. 2019. SBC LTER: Land: Stream chemistry in the Santa Barbara Coastal drainage area, ongoing since 2000 ver 16. Environmental Data Initiative. https://doi.org/10.6073/pasta/67a558a24ceed9a0a5bf5e46ab841174. 
 
-**NOTES: Make sure you convert -999 values to NA.** If you have a dataset that you are more interested in exploring with hierarchical clustering, you are welcome to use an alternative dataset (and alternate linkage method) of your choosing instead. 
-
 **- Create a finalized HTML (knitted from .Rmd) that includes: **
-    - *A useful descriptive introductory summary (3 - 4 sentences)* that helps the audience understand         the data (include a citation as necessary) and what you’ll be exploring
-    - *All of your organized and well-annotated code (with warnings/messages suppressed)* you wrote to         wrangle data then create the dendrogram, and to create a professional looking dendrogram            that appears (with a caption) in your knitted HTML.  
+    - *A useful descriptive introductory summary (3 - 4 sentences)* that helps the audience understand the data (include a citation as necessary) and what you’ll be exploring
+    - *All of your organized and well-annotated code (with warnings/messages suppressed)* you wrote to wrangle data then create the dendrogram, and to create a professional looking dendrogram ?that appears (with a caption) in your knitted HTML.  
 
-    - Optional: rerun the dendrogram using a single linkage method, and include a tanglegram (in            addition to your pro-quality dendrogram) to show how the different linkage changes the            clustering.
+    - Optional: rerun the dendrogram using a single linkage method, and include a tanglegram (inaddition to your pro-quality dendrogram) to show how the different linkage changes the  clustering.
     
-    - *A brief summary* (nicely formatted and professionally written bulletpoints are fine)                 highlighting some major takeaways from your hierarchical clustering analysis that can be              gleaned from the dendrogram(s).
+    - *A brief summary* (nicely formatted and professionally written bulletpoints are fine) highlighting some major takeaways from your hierarchical clustering analysis that can be gleaned from the dendrogram(s).
+    
+**Overview**
+
+This report uses hierarchical clustering by complete linkage to create a dendogram showing multivariate clustering for water chemistry by site. A tanglegram is generated to show how clustering using single linkage and complete linkage differ. The data are drawn from six Santa Barbara Coastal Long Term Ecological Research (LTER) sites. Monitoring has been ongoing since year 2000.
+
+    
+```{r}
+#Data Wrangling
+
+stream_chem <- read_csv(here("data", "sbc_lter_registered_stream_chemistry.csv")) %>% 
+  clean_names() %>% 
+  na_if(-999.0) %>% 
+  drop_na() %>% 
+  group_by(site_code) 
+
+stream_chem_sum <- stream_chem %>% 
+  summarize_all(mean, na.rm = TRUE) 
+
+stream_chem_scale <- stream_chem_sum %>% 
+  select (-timestamp_local, -site_code) %>% 
+  scale()
+
+  rownames(stream_chem_scale) <- stream_chem_sum$site_code #converts site_code to row names
+```
+
+```{r}
+#Calculations 
+
+#Calculate Euclidean distance before performing complete linkage agglomerative hierarchical clustering
+euc_dist <- dist(stream_chem_scale, method = 'euclidean', diag = TRUE, upper = TRUE)
+
+### hierarchical clustering (single linkage)
+clust_single <- hclust(euc_dist, method = 'single')
+
+### hierarchical clustering (complete linkage)
+clust_complete <- hclust(euc_dist, method = 'complete')
+```
+
+```{r}
+#Create dendrogram
+ggdendrogram(clust_complete) +
+  theme_classic() +
+  labs(x = "Stream Site", y = "Distance",
+       title = "")
+```
+

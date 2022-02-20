@@ -1,5 +1,5 @@
 ---
-title: "Task 1 - "
+title: "Task 1 - PCA"
 author: "Logan Ossentjuk"
 output: 
   html_document:
@@ -11,42 +11,68 @@ You only need to **use one dataset to perform PCA, create a biplot, and interpre
 **All of your organized and well-annotated code (with warnings/messages suppressed) you wrote to wrangle data then run PCA, and to create a professional looking PCA biplot that appears (with a caption) in your knitted HTML** (optional: also include a nicely formatted screeplot)
 **A brief summary (nicely formatted and professionally written bulletpoints are fine) highlighting some major takeaways from your PCA that can be gleaned from the biplot (and screeplot, if included)**
 
+#Overview: 
+
+
 ```{r setup, include=TRUE, message= FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 library(tidyverse)
 library(janitor)
 library(here)
- library(ggfortify)
- library(palmerpenguins)
- library(patchwork)
+library(ggfortify)
+library(patchwork)
 ```
 
-```{r}
-
+```{r, include= TRUE}
 
 world_env <- read_csv(here('data', 'world_env_vars.csv')) %>% 
   clean_names() %>% 
   drop_na()
 
-world_env_pca <- world_env %>% 
-        #select(-species, -island, -year, -sex) %>% 
-        select(accessibility_to_cities:elevation, slope:isothermality, wind, cloudiness) %>% 
-        scale() %>% #scales variables based on ranges onto the same spectrum
-        prcomp()
+world_env_sub <- world_env %>% 
+  select(country, accessibility_to_cities, cropland_cover, tree_canopy_cover, rain_mean_annual, rain_wettest_month,temp_annual_range, temp_mean_annual, temp_seasonality, wind, cloudiness) %>% 
+  rename(
+    "Country" = country,
+    "Accessibility To Cities" = accessibility_to_cities,
+    "Cropland Cover" = cropland_cover,
+    "Tree Canopy Cover" = tree_canopy_cover,
+    "Annual Mean Rainfall" = rain_mean_annual,
+    "Wettest Month of Rain" = rain_wettest_month, 
+    "Annual Temperature Range" = temp_annual_range,
+    "Annual Mean Temperature" = temp_mean_annual,
+    "Temperature Seasonality" = temp_seasonality,
+    "Wind" = wind, 
+    "Cloudiness" = cloudiness)
+
+
+###Running PCA
+world_env_pca <- world_env_sub %>% 
+  select(-Country) %>% 
+  scale() %>% #scales variables based on ranges onto the same spectrum
+  prcomp(scale = TRUE)
 
 world_env_pca
 ```
 
+### PCA Analysis 
 ```{r}
 autoplot(world_env_pca, 
-         data = world_env, 
+         data = world_env_sub, 
          loadings = TRUE,
-         colour = 'country',
+         colour = 'darkgreen',
          loadings.label = TRUE,
-         loadings.colour = 'black',
+         loadings.colour = 'goldenrod3',
          loadings.label.colour = 'black',
          loadings.label.vjust = -0.5) + 
         #scale_color_manual(values = c('blue', 'purple', 'orange')) +
-        theme_minimal()
+        theme_grey()
 ```
 
+#Summary of Findings: 
+
+ Tree canopy was positively correlated mean and wettest month rainfall, while negatively correlated with temperature seasonality and temperature range. This aligns with our knowledge that trees need a high level of precipitation to thrive. While we cannot infer causality from the correlation, it raises an interesting questions about if the presence of forests serves as a buffer against temperature extremes or if temperature extremes undermine trees' survivability.
+- Driest month of rainfall was negatively correlated with temperature range, perhaps pointing to the fact that desert-like environments have large temperature swings throughout the day.
+- Rain seasonality was almost completely unrelated to temperature seasonality.
+- The variation in accessibility to cities was not captured very well by PCA 1 or PCA 2, indicating a weak relationship between accessibility to cities and the other variables analyzed.
+
+```{r}
