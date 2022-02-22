@@ -66,7 +66,7 @@ autoplot(world_env_pca,
         theme_grey()
 ```
 <br> 
-**Figure 1. **  illustrates principle components analysis results of the acquired climate data. Each country is shown by a green dot. Orange arrows demonstrate chosen variables of interest where increased arrow length denotes an increased role in explaining the variation within this data set. 
+**Figure 1. **  Illustrates principle components analysis results of the acquired climate data. Each country is shown by a green dot. Orange arrows demonstrate chosen variables of interest where increased arrow length denotes an increased role in explaining the variation within this data set. 
 
 
 # Summary of Findings: 
